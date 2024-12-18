@@ -1,0 +1,12 @@
+test_dataset:
+  dataset:
+    name: paired-dataset
+    args:
+      gt_data_file: ./datasets/list/SR/RealSRx3_valid_gt.txt
+      lq_data_file: ./datasets/list/SR/RealSRx3_valid_lq.txt
+      phase: test
+  batch_size: 1
+
+eval_y_only: True
+eval_crop_size: 2048
+

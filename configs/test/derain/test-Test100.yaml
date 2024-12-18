@@ -1,0 +1,10 @@
+test_dataset:
+  dataset:
+    name: paired-dataset
+    args:
+      gt_data_file: ./datasets/list/Derain/Test100_gt.txt
+      lq_data_file: ./datasets/list/Derain/Test100_lq.txt
+      phase: test
+  batch_size: 1
+
+eval_y_only: True

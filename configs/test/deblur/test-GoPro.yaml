@@ -1,0 +1,8 @@
+test_dataset:
+  dataset:
+    name: paired-dataset
+    args:
+      gt_data_file: ./datasets/list/Deblur/GoPro_valid_gt.txt
+      lq_data_file: ./datasets/list/Deblur/GoPro_valid_lq.txt
+      phase: test
+  batch_size: 1

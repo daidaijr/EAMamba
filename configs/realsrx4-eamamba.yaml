@@ -1,0 +1,78 @@
+train_dataset:
+  dataset:
+    name: paired-dataset
+    args:
+      gt_data_file: ./datasets/list/SR/RealSRx4_train_gt.txt
+      lq_data_file: ./datasets/list/SR/RealSRx4_train_lq.txt
+      phase: train
+      repeat: 1
+      augment: True
+  batch_size: 8   # Max batch size for progressive training
+  crop_size: 128  # Max patch size for progressive training
+
+valid_dataset:
+  dataset:
+    name: paired-dataset
+    args:
+      gt_data_file: ./datasets/list/SR/RealSRx4_valid_gt.txt
+      lq_data_file: ./datasets/list/SR/RealSRx4_valid_lq.txt
+      phase: valid
+      repeat: 1
+      augment: False 
+  batch_size: 8
+  crop_size: 128
+
+model:
+  name: eamamba
+  args:
+    inp_channels: 3
+    out_channels: 3
+    dim: 64
+    num_blocks: [4, 6, 6, 7]
+    num_refinement_blocks: 2
+    ffn_expansion_factor: 2
+    bias: False
+    LayerNorm_type: 'WithBias'      # Other option 'BiasFree'
+    dual_pixel_task: False          # True for dual-pixel defocus deblurring only. Also set inp_channels=6
+    checkpoint_percentage: !!float 0.0    # ceil(percentage * num_blocks[i]) = # of segment for stage i
+    channel_mixer_type: 'Simple'    # Change the channel mixer of every blocks, default to Simple, can be GDFN, FFN, CCA
+    # SimpleGate require dim*ffn_expansion_factor to be even
+
+    mamba_cfg:
+    # ==== extras       ====
+      scan_type: 'diagonal'         # None(normal), diagonal, zorder, zigzag, hilbert
+      scan_count: 8                 # 1, 2, 4, 8
+      scan_merge_method: 'concate'  # add, concate
+      disable_z_branch: False
+    # ==== mamba stats  ====
+      d_state: 16                 
+      d_conv: 3                     # SET to ODD NUMBER FOR CONV 2D
+      expand: 1
+      conv_2d: True                 # Conv1D if False, otherwise Conv2d 
+
+e_decay: 0.999 # EMA model (model_e)
+
+optimizer: 
+  name: AdamW
+  args:
+    lr: !!float 3e-4           
+    weight_decay: !!float 1e-4 
+    betas: [0.9, 0.999]
+
+lr_scheduler:
+  name: CosineAnnealingRestartCyclicLR
+  args:
+    periods: [30000]
+    restart_weights: [1]
+    eta_mins: [0.0003]  
+
+total_iter: 30000
+use_grad_clip: true
+
+print_freq: 3000
+val_freq: 3000
+val_img_save_freq_mult: 10    # save val image every X val
+save_checkpoint_freq: 30000   
+save_last_freq: 300
+
+resume: ~

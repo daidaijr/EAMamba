@@ -1,0 +1,12 @@
+mamba-ssm
+
+accelerate
+einops
+fvcore
+hilbertcurve
+tensorboardX
+timm
+triton
+transformers
+seaborn
+matplotlib

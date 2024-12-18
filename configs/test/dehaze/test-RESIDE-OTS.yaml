@@ -1,0 +1,8 @@
+test_dataset:
+  dataset:
+    name: paired-dataset
+    args:
+      gt_data_file: ./datasets/list/Dehaze/RESIDE_standard_OTS_test_gt.txt
+      lq_data_file: ./datasets/list/Dehaze/RESIDE_standard_OTS_test_lq.txt # use SOTS from RESIDE-standard
+      phase: test   # standard OTS test = standard SOTS outdoor
+  batch_size: 1

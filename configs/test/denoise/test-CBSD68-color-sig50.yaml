@@ -1,0 +1,9 @@
+test_dataset:
+  dataset:
+    name: denoising-color-dataset
+    args:
+      sigma_type: constant
+      sigma_range: 50
+      gt_data_file: ./datasets/list/Denoise/CBSD68.txt
+      phase: test
+  batch_size: 1
