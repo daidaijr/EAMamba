@@ -1,0 +1,11 @@
+test_dataset:
+  dataset:
+    name: sr-paired-dataset
+    args:
+      gt_data_file: ./datasets/list/SR/Set14_test_gt.txt
+      lq_data_file: ./datasets/list/SR/Set14_x4_test_lq.txt
+      phase: test
+  batch_size: 1
+
+eval_y_only: True
+# eval_crop_size: 2048

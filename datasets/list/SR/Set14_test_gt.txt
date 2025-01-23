@@ -1,0 +1,14 @@
+datasets/SR/benchmark/Set14/HR/baboon.png
+datasets/SR/benchmark/Set14/HR/barbara.png
+datasets/SR/benchmark/Set14/HR/bridge.png
+datasets/SR/benchmark/Set14/HR/coastguard.png
+datasets/SR/benchmark/Set14/HR/comic.png
+datasets/SR/benchmark/Set14/HR/face.png
+datasets/SR/benchmark/Set14/HR/flowers.png
+datasets/SR/benchmark/Set14/HR/foreman.png
+datasets/SR/benchmark/Set14/HR/lenna.png
+datasets/SR/benchmark/Set14/HR/man.png
+datasets/SR/benchmark/Set14/HR/monarch.png
+datasets/SR/benchmark/Set14/HR/pepper.png
+datasets/SR/benchmark/Set14/HR/ppt3.png
+datasets/SR/benchmark/Set14/HR/zebra.png

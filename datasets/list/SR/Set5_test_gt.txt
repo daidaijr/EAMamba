@@ -1,0 +1,5 @@
+datasets/SR/benchmark/Set5/HR/baby.png
+datasets/SR/benchmark/Set5/HR/bird.png
+datasets/SR/benchmark/Set5/HR/butterfly.png
+datasets/SR/benchmark/Set5/HR/head.png
+datasets/SR/benchmark/Set5/HR/woman.png

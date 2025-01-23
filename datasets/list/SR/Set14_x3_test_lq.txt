@@ -1,0 +1,14 @@
+datasets/SR/benchmark/Set14/LR_bicubic/X3/baboonx3.png
+datasets/SR/benchmark/Set14/LR_bicubic/X3/barbarax3.png
+datasets/SR/benchmark/Set14/LR_bicubic/X3/bridgex3.png
+datasets/SR/benchmark/Set14/LR_bicubic/X3/coastguardx3.png
+datasets/SR/benchmark/Set14/LR_bicubic/X3/comicx3.png
+datasets/SR/benchmark/Set14/LR_bicubic/X3/facex3.png
+datasets/SR/benchmark/Set14/LR_bicubic/X3/flowersx3.png
+datasets/SR/benchmark/Set14/LR_bicubic/X3/foremanx3.png
+datasets/SR/benchmark/Set14/LR_bicubic/X3/lennax3.png
+datasets/SR/benchmark/Set14/LR_bicubic/X3/manx3.png
+datasets/SR/benchmark/Set14/LR_bicubic/X3/monarchx3.png
+datasets/SR/benchmark/Set14/LR_bicubic/X3/pepperx3.png
+datasets/SR/benchmark/Set14/LR_bicubic/X3/ppt3x3.png
+datasets/SR/benchmark/Set14/LR_bicubic/X3/zebrax3.png

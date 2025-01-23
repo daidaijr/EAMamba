@@ -8,7 +8,7 @@ import torch.nn.functional as F
 from torch.utils.checkpoint import checkpoint
 
 from models import register
-from .module.mamba import ExtendedMamba, LocalMamba
+from .module.mamba import ExtendedMamba
 from .module.scan import ScanTransform
 
 ## Layer Norm
@@ -251,21 +251,44 @@ class Upsample(nn.Module):
     def forward(self, x):
         return self.body(x)
 
+class Upscale(nn.Sequential):
+    """Upscale module.
+
+    Args:
+        scale (int): Scale factor. Supported scales: 2^n and 3.
+        num_feat (int): Channel number of intermediate features.
+    """
+
+    def __init__(self, scale, num_feat):
+        m = []
+        if (scale & (scale - 1)) == 0:  # scale = 2^n
+            for _ in range(int(math.log(scale, 2))):
+                m.append(nn.Conv2d(num_feat, 4 * num_feat, 3, 1, 1))
+                m.append(nn.PixelShuffle(2))
+        elif scale == 3:
+            m.append(nn.Conv2d(num_feat, 9 * num_feat, 3, 1, 1))
+            m.append(nn.PixelShuffle(3))
+        else:
+            raise ValueError(f'scale {scale} is not supported. '
+                             'Supported scales: 2^n and 3.')
+        super(Upscale, self).__init__(*m)
+
+
 ##---------- EAmamba -----------------------
 @register('eamamba')
 class EAMamba(nn.Module):
     def __init__(self, 
         inp_channels=3, 
         out_channels=3, 
-        dim=48,
-        num_blocks=[4,6,6,8], 
-        num_refinement_blocks=4,
-        ffn_expansion_factor=2.66,
+        dim=64,
+        num_blocks=[4, 6, 6, 7], 
+        num_refinement_blocks=2,
+        ffn_expansion_factor=2.0,
         bias=False,
         layernorm_type='WithBias',   # other option 'BiasFree'
         dual_pixel_task=False,       # True for dual-pixel defocus deblurring only. Also set inp_channels=6
         checkpoint_percentage=0.0,   # percentage of checkpointed block
-        channel_mixer_type='GDFN',
+        channel_mixer_type='Simple',
         mamba_cfg=None,
         **kwargs        # This is to ignore any other arguments that are not used
     ):
@@ -348,6 +371,10 @@ class EAMamba(nn.Module):
         if self.dual_pixel_task:
             self.skip_conv = nn.Conv2d(dim, int(dim*2**1), kernel_size=1, bias=bias)
             
+        # Add Upsample for the final output resolution
+        if self.upscale > 1:
+            self.upsample = Upscale(self.upscale, out_channels)
+
         self.output = nn.Conv2d(int(dim*2**1), out_channels, kernel_size=3, stride=1, padding=1, bias=bias)
 
     def forward(self, x):
@@ -382,9 +409,98 @@ class EAMamba(nn.Module):
         #### For Dual-Pixel Defocus Deblurring Task ####
         if self.dual_pixel_task:
             out_dec_level1 = out_dec_level1 + self.skip_conv(inp_enc_level1)
-            out_dec_level1 = self.output(out_dec_level1)
+            final_output = self.output(out_dec_level1)
         else:
-            out_dec_level1 = self.output(out_dec_level1) + x
+            if self.upscale > 1:
+                x_upscaled = F.interpolate(x, scale_factor=self.upscale, mode='bicubic', align_corners=False)
+                final_output = self.upsample(out_dec_level1) + x_upscaled
+            else:
+                final_output = self.output(out_dec_level1) + x
 
+        return final_output
 
-        return out_dec_level1
+##---------- EAmamba SR -----------------------
+@register('eamambasr')
+class EAMambaSR(nn.Module):
+    def __init__(self, 
+        inp_channels=3, 
+        out_channels=3, 
+        dim=64,
+        num_blocks=[4, 4, 4, 4], 
+        ffn_expansion_factor=2.0,
+        bias=False,
+        layernorm_type='WithBias',   # other option 'BiasFree'
+        checkpoint_percentage=0.0,   # percentage of checkpointed block
+        channel_mixer_type='Simple',
+        upscale=2,                   # upscaling the final output
+        mamba_cfg=None,
+        **kwargs        # This is to ignore any other arguments that are not used
+    ):
+ 
+        super(EAMambaSR, self).__init__()
+ 
+        self.upscale = upscale
+ 
+        channel_mixer_type = channel_mixer_type.lower() if channel_mixer_type is not None else None
+        assert channel_mixer_type in ALLOWED_CHANNEL_MIXER_TYPE, \
+            f"channel_mixer_type should be one of {ALLOWED_CHANNEL_MIXER_TYPE}, but got {channel_mixer_type}"
+ 
+        scan_type = mamba_cfg.get('scan_type')
+        scan_type = scan_type.lower() if scan_type is not None else None
+        scan_count = mamba_cfg.get('scan_count')
+        scan_merge_method = mamba_cfg.get('scan_merge_method')
+ 
+        # Custom scan input transform class
+        scan_transform = ScanTransform(scan_type, scan_count, scan_merge_method)
+ 
+        self.mamba_cfg = mamba_cfg
+        shared_settings = { # settings that are the same for all stages
+            'ffn_expansion_factor': ffn_expansion_factor,
+            'bias': bias,
+            'layernorm_type': layernorm_type,
+            'scan_transform': scan_transform,
+            'mamba_cfg': mamba_cfg,
+            'checkpoint_percentage': checkpoint_percentage,
+            'channel_mixer_type': channel_mixer_type
+        }
+ 
+        # 1. shallow feature extraction
+        self.conv_first = nn.Conv2d(inp_channels, dim, kernel_size=3, stride=1, padding=1, bias=bias)
+ 
+        # 2. deep feature extraction
+        self.num_layers = len(num_blocks)
+        self.layers = nn.ModuleList()
+        for i in range(self.num_layers):
+            self.layers.append(ResidualGroup(num_blocks[i], dim, shared_settings))
+        self.norm = LayerNorm(dim, layernorm_type)
+        self.conv_after_body = nn.Conv2d(dim, dim, kernel_size=3, stride=1, padding=1, bias=bias)
+ 
+        # 3. upsampling
+        self.conv_before_upsample = nn.Sequential(
+                nn.Conv2d(dim, dim, 3, 1, 1), nn.LeakyReLU(inplace=True))
+        self.upsample = Upscale(upscale, dim)
+        self.conv_last = nn.Conv2d(dim, out_channels, kernel_size=3, stride=1, padding=1, bias=bias)
+ 
+ 
+    def forward_features(self, x):
+        for layer in self.layers:
+            x = layer(x)
+        x = self.norm(x)
+        return x
+ 
+    def forward(self, x):
+        x = self.conv_first(x)
+        x = self.conv_after_body(self.forward_features(x)) + x
+        x = self.conv_before_upsample(x)
+        x = self.upsample(x)
+        x = self.conv_last(x)
+        return x
+ 
+class ResidualGroup(nn.Module):
+    def __init__(self, num_blocks, dim, shared_settings):
+        super(ResidualGroup, self).__init__()
+        self.blocks = create_blocks(num_blocks, dim, **shared_settings)
+        self.conv = nn.Conv2d(dim, dim, 3, 1, 1)
+ 
+    def forward(self, x):
+        return self.conv(self.blocks(x)) + x

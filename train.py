@@ -122,6 +122,7 @@ def prepare_training(accelerator):
     
     return model, model_e, optimizer, iter_start, scheduler
 
+from torchvision import transforms
 def train(accelerator, train_data, model, model_e, optimizer, scheduler, 
           batch_size, crop_size, cur_batch_size, cur_crop_size, use_grad_clip=True):
 
@@ -142,13 +143,20 @@ def train(accelerator, train_data, model, model_e, optimizer, scheduler,
         gt = gt[indices]
 
     # crop at random position of the max-cropped patch
+    scaling_factor = int(gt.shape[-1] / lq.shape[-1])
     if cur_crop_size < crop_size:
-        x0 = int((crop_size - cur_crop_size) * random.random())
-        y0 = int((crop_size - cur_crop_size) * random.random())
+        cur_crop_size = cur_crop_size // scaling_factor
+        h_lr, w_lr = lq.shape[-2], lq.shape[-1]
+        x0 = int((h_lr - cur_crop_size) * random.random())
+        y0 = int((w_lr - cur_crop_size) * random.random())
         x1 = x0 + cur_crop_size
         y1 = y0 + cur_crop_size
-        lq = lq[:, : ,x0:x1, y0:y1]
-        gt = gt[:, :, x0:x1, y0:y1]
+        lq = lq[:, :, x0:x1, y0:y1]
+        gt_x0 = int(x0 * scaling_factor)
+        gt_y0 = int(y0 * scaling_factor)
+        gt_x1 = int(x1 * scaling_factor)
+        gt_y1 = int(y1 * scaling_factor)
+        gt = gt[:, :, gt_x0:gt_x1, gt_y0:gt_y1]
 
     pred = model(lq)
     loss = loss_fn(pred, gt)

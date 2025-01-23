@@ -76,7 +76,7 @@ def calc_ssim(pred, gt, y_only=False, rgb_range=1.):
     return ssim_map.mean()
 
 
-def forward_patch(model, img, shave=16., crop_size=256):
+def forward_patch(model, img, shave=16., crop_size=256, scale=1):
     min_size = crop_size*crop_size
     b, c, h, w = img.size()
 
@@ -99,6 +99,8 @@ def forward_patch(model, img, shave=16., crop_size=256):
             forward_patch(model, patch, shave=shave, crop_size=crop_size) for patch in x_chops
         ]
 
+    h *= scale
+    w *= scale
     top = slice(0, h//2)
     bottom = slice(h - h//2, h)
     bottom_r = slice(h//2 - h, None)
@@ -126,6 +128,7 @@ def evaluate(
     current_iter=None,
     verbose=False,
     save_image=False,
+    scale=1
 ):
     model.eval()
 
@@ -163,8 +166,7 @@ def evaluate(
                 if eval_crop_size is None:
                     preds.append(model(lq))
                 else:
-                    preds.append(forward_patch(model, lq, crop_size=eval_crop_size))
-        
+                    preds.append(forward_patch(model, lq, crop_size=eval_crop_size, scale=scale))
         end = time.time()
         torch.cuda.synchronize()
         val_time.add(end - start, bs)
@@ -180,20 +182,25 @@ def evaluate(
         pred = pred[..., :hq_h, :hq_w]
         pred = torch.clip(pred, 0, 1)
 
-        res_psnr = metric_psnr(pred, gt)
-        res_ssim = metric_ssim(pred, gt)
+        if scale > 1:
+            res_psnr = metric_psnr(pred[:, :, scale:-scale, scale:-scale], gt[:, :, scale:-scale, scale:-scale])
+            res_ssim = metric_ssim(pred[:, :, scale:-scale, scale:-scale], gt[:, :, scale:-scale, scale:-scale])
+        else:
+            res_psnr = metric_psnr(pred, gt)
+            res_ssim = metric_ssim(pred, gt)
         val_psnr.add(res_psnr, bs)
         val_ssim.add(res_ssim, bs)
 
         if save_dir:
             if name == 'validation':  # only save last batch
-                # B C H W -> C B*H W
-                final_pred = rearrange(pred, 'b c h w -> c (b h) w')
-                final_gt = rearrange(gt, 'b c h w -> c (b h) w')
-                lq_tensor = rearrange(lq, 'b c h w -> c (b h) w')
-                saved_tensor = torch.cat((lq_tensor, final_pred, final_gt), dim=2)
-                saved_image = transforms.ToPILImage()(saved_tensor.cpu())
-                saved_image.save(img_dir / f'current_iter-{str(current_iter)}.png')
+                if lq.shape[-1] == gt.shape[-1]:    # Only if the data has the same shape                    
+                    # B C H W -> C B*H W
+                    final_pred = rearrange(pred, 'b c h w -> c (b h) w')
+                    final_gt = rearrange(gt, 'b c h w -> c (b h) w')
+                    lq_tensor = rearrange(lq, 'b c h w -> c (b h) w')
+                    saved_tensor = torch.cat((lq_tensor, final_pred, final_gt), dim=2)
+                    saved_image = transforms.ToPILImage()(saved_tensor.cpu())
+                    saved_image.save(img_dir / f'current_iter-{str(current_iter)}.png')
             else:
                 if save_image:
                     saved_image = transforms.ToPILImage()(pred[0].cpu())
@@ -232,26 +239,10 @@ if __name__ == '__main__':
     print(sv_file['current_iter'])
 
     dataset_dict = {
-        'SIDD': ['configs/test/denoise/test-SIDD.yaml'],
         'RealSRx2': ['configs/test/sr/test-RealSRx2.yaml'],
         'RealSRx3': ['configs/test/sr/test-RealSRx3.yaml'],
         'RealSRx4': ['configs/test/sr/test-RealSRx4.yaml'],
-        'GoPro': ['configs/test/deblur/test-GoPro.yaml'],
-        'HIDE' : ['configs/test/deblur/test-HIDE.yaml'],
-        'RESIDE_ITS': ['configs/test/dehaze/test-RESIDE-ITS.yaml'],
-        'RESIDE_OTS': ['configs/test/dehaze/test-RESIDE-OTS.yaml'], 
-        'Denoise-sig15': ['configs/test/denoise/test-CBSD68-color-sig15.yaml',
-                          'configs/test/denoise/test-Kodak24-color-sig15.yaml',
-                          'configs/test/denoise/test-McMaster-color-sig15.yaml',
-                          'configs/test/denoise/test-Urban100-color-sig15.yaml'],
-        'Denoise-sig25': ['configs/test/denoise/test-CBSD68-color-sig25.yaml',
-                          'configs/test/denoise/test-Kodak24-color-sig25.yaml',
-                          'configs/test/denoise/test-McMaster-color-sig25.yaml',
-                          'configs/test/denoise/test-Urban100-color-sig25.yaml'],
-        'Denoise-sig50': ['configs/test/denoise/test-CBSD68-color-sig50.yaml',
-                          'configs/test/denoise/test-Kodak24-color-sig50.yaml',
-                          'configs/test/denoise/test-McMaster-color-sig50.yaml',
-                          'configs/test/denoise/test-Urban100-color-sig50.yaml'],
+        'SIDD': ['configs/test/denoise/test-SIDD.yaml'],
         'Denoise': ['configs/test/denoise/test-CBSD68-color-sig15.yaml',
                     'configs/test/denoise/test-Kodak24-color-sig15.yaml',
                     'configs/test/denoise/test-McMaster-color-sig15.yaml',
@@ -264,13 +255,41 @@ if __name__ == '__main__':
                     'configs/test/denoise/test-Kodak24-color-sig50.yaml',
                     'configs/test/denoise/test-McMaster-color-sig50.yaml',
                     'configs/test/denoise/test-Urban100-color-sig50.yaml'],
+        'Denoise-sig15': ['configs/test/denoise/test-CBSD68-color-sig15.yaml',
+                          'configs/test/denoise/test-Kodak24-color-sig15.yaml',
+                          'configs/test/denoise/test-McMaster-color-sig15.yaml',
+                          'configs/test/denoise/test-Urban100-color-sig15.yaml'],
+        'Denoise-sig25': ['configs/test/denoise/test-CBSD68-color-sig25.yaml',
+                          'configs/test/denoise/test-Kodak24-color-sig25.yaml',
+                          'configs/test/denoise/test-McMaster-color-sig25.yaml',
+                          'configs/test/denoise/test-Urban100-color-sig25.yaml'],
+        'Denoise-sig50': ['configs/test/denoise/test-CBSD68-color-sig50.yaml',
+                          'configs/test/denoise/test-Kodak24-color-sig50.yaml',
+                          'configs/test/denoise/test-McMaster-color-sig50.yaml',
+                          'configs/test/denoise/test-Urban100-color-sig50.yaml'],
+        'Motion_Deblur': ['configs/test/deblur/test-GoPro.yaml',
+                          'configs/test/deblur/test-HIDE.yaml'],
+        'GoPro': ['configs/test/deblur/test-GoPro.yaml'],
+        'HIDE' : ['configs/test/deblur/test-HIDE.yaml'],
+        'RESIDE_ITS': ['configs/test/dehaze/test-RESIDE-ITS.yaml'],
+        'RESIDE_OTS': ['configs/test/dehaze/test-RESIDE-OTS.yaml'], 
         'Derain': ['configs/test/derain/test-Rain100H.yaml',
                     'configs/test/derain/test-Rain100L.yaml',
                     'configs/test/derain/test-Test100.yaml',
                     'configs/test/derain/test-Test1200.yaml',
                     'configs/test/derain/test-Test2800.yaml'],
-        'Motion_Deblur': ['configs/test/deblur/test-GoPro.yaml',
-                          'configs/test/deblur/test-HIDE.yaml'],
+        'SRx2': ['configs/test/sr/test-ySet5x2.yaml',
+                 'configs/test/sr/test-ySet14x2.yaml',
+                 'configs/test/sr/test-yB100x2.yaml',
+                 'configs/test/sr/test-yUrban100x2.yaml'],
+        'SRx3': ['configs/test/sr/test-ySet5x3.yaml',
+                 'configs/test/sr/test-ySet14x3.yaml',
+                 'configs/test/sr/test-yB100x3.yaml',
+                 'configs/test/sr/test-yUrban100x3.yaml'],
+        'SRx4': ['configs/test/sr/test-ySet5x4.yaml',
+                 'configs/test/sr/test-ySet14x4.yaml',
+                 'configs/test/sr/test-yB100x4.yaml',
+                 'configs/test/sr/test-yUrban100x4.yaml'],
         'DPDD': ['configs/test/deblur/test-DPDD-indoor.yaml',
                  'configs/test/deblur/test-DPDD-outdoor.yaml',
                  'configs/test/deblur/test-DPDD.yaml'],
@@ -298,16 +317,19 @@ if __name__ == '__main__':
         name = config_name.split('/')[-1].replace('.yaml', '')
         print('current dataset: {}'.format(name))
 
+        scales = {'SRx2': 2, 'SRx3': 3, 'SRx4': 4}
         psnr, ssim = evaluate(
             loader,
             model_e,
             name=name,
             eval_y_only=config.get('eval_y_only'),
             eval_crop_size=config.get('eval_crop_size'),
+            scale=scales[args.dataset] if args.dataset in scales.keys() else 1,
             ensemble=args.ensemble,
             save_dir=args.model.split('.pth')[0],
             verbose=True, 
             save_image=args.save,
+            
         )
 
         print('result psnr : {:.4f} ssim : {:.4f}\n'.format(psnr, ssim))

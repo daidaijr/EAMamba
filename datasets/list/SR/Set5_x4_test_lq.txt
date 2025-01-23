@@ -1,0 +1,5 @@
+datasets/SR/benchmark/Set5/LR_bicubic/X4/babyx4.png
+datasets/SR/benchmark/Set5/LR_bicubic/X4/birdx4.png
+datasets/SR/benchmark/Set5/LR_bicubic/X4/butterflyx4.png
+datasets/SR/benchmark/Set5/LR_bicubic/X4/headx4.png
+datasets/SR/benchmark/Set5/LR_bicubic/X4/womanx4.png

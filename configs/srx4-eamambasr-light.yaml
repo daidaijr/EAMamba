@@ -1,36 +1,35 @@
 train_dataset:
   dataset:
-    name: paired-dataset
+    name: sr-paired-dataset
     args:
-      gt_data_file: ./datasets/list/Denoise/SIDD_train_gt.txt
-      lq_data_file: ./datasets/list/Denoise/SIDD_train_lq.txt
+      gt_data_file: ./datasets/list/SR/DIV2K_train_gt.txt
+      lq_data_file: ./datasets/list/SR/DIV2K_x4_train_lq.txt
       phase: train
       repeat: 1
       augment: True
-  batch_size: 8   # Max batch size for progressive training
-  crop_size: 256  # Max patch size for progressive training
+  batch_size: 8
+  crop_size: 256
 
 valid_dataset:
   dataset:
-    name: paired-dataset
+    name: sr-paired-dataset
     args:
-      gt_data_file: ./datasets/list/Denoise/SIDD_valid_gt.txt
-      lq_data_file: ./datasets/list/Denoise/SIDD_valid_lq.txt
+      gt_data_file: ./datasets/list/SR/DIV2K_valid_gt.txt
+      lq_data_file: ./datasets/list/SR/DIV2K_x4_valid_lq.txt
       phase: valid
       repeat: 1
       augment: False 
   batch_size: 8
-  crop_size: 128
+  crop_size: 256
 
 model:
-  name: eamamba
+  name: eamambasr
   args:
     inp_channels: 3
     out_channels: 3
     dim: 64
-    num_blocks: [4, 6, 6, 7]
-    num_refinement_blocks: 2
-    ffn_expansion_factor: 2
+    num_blocks: [4, 4, 4, 4]
+    ffn_expansion_factor: 1
     bias: False
     LayerNorm_type: 'WithBias'      # Other option 'BiasFree'
     dual_pixel_task: False          # True for dual-pixel defocus deblurring only. Also set inp_channels=6
@@ -38,40 +37,36 @@ model:
     channel_mixer_type: 'Simple'    # Change the channel mixer of every blocks, default to Simple, can be GDFN, FFN, CCA
     # SimpleGate require dim*ffn_expansion_factor to be even
 
+    upscale: 4
+
     mamba_cfg:
     # ==== extras       ====
-      scan_type: 'zorder'           # None(normal), diagonal, zorder, zigzag, hilbert
-      scan_count: 4                 # 1, 2, 4, 8
+      scan_type: 'diagonal'         # None(normal), diagonal, zorder, zigzag, hilbert
+      scan_count: 8                 # 1, 2, 4, 8
       scan_merge_method: 'concate'  # add, concate
       disable_z_branch: False
     # ==== mamba stats  ====
-      d_state: 16                 
+      d_state: 10                 
       d_conv: 3                     # SET to ODD NUMBER FOR CONV 2D
       expand: 1
       conv_2d: True                 # Conv1D if False, otherwise Conv2d 
 
 e_decay: 0.999 # EMA model (model_e)
 
-progressive_train:
-  iters: [138000, 96000, 72000, 144000]     
-  batch_sizes: [8, 5, 4, 2, 1, 1]             # Batch size per gpu                         
-  crop_sizes: [128, 160, 192, 256]  # Patch sizes for progressive training
-
 optimizer: 
   name: AdamW
   args:
-    lr: !!float 3e-4           
-    weight_decay: !!float 1e-4 
+    lr: !!float 2e-4           
+    weight_decay: !!float 0.0 
     betas: [0.9, 0.999]
 
 lr_scheduler:
-  name: CosineAnnealingRestartCyclicLR
+  name: MultiStepLR
   args:
-    periods: [138000, 312000]
-    restart_weights: [1, 1]
-    eta_mins: [0.0003, 0.000001]  
+    milestones: [250000, 400000, 450000, 475000]
+    gamma: 0.5
 
-total_iter: 450000
+total_iter: 500000
 use_grad_clip: true
 
 print_freq: 3000
