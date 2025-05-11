@@ -76,9 +76,10 @@ class ScanTransform():
     def zigzag_scan(self, size):
         height, width = size
         
-        max_dim = max(height, width)
+        # max_dim = max(height, width)
         a = np.arange(height * width).reshape(height, width)
-        zigzag_indices = np.concatenate([np.diagonal(a[::-1,:], k)[::(2*(k % 2)-1)] for k in range(1 - max_dim, max_dim)])
+        # zigzag_indices = np.concatenate([np.diagonal(a[::-1,:], k)[::(2*(k % 2)-1)] for k in range(1 - max_dim, max_dim)])
+        zigzag_indices = np.concatenate([np.diagonal(a[::-1,:], k)[::(2*(k % 2)-1)] for k in range(1 - height, width)])
         return zigzag_indices
 
     def z_order_scan(self, size):
@@ -218,13 +219,22 @@ class ScanTransform():
             # Apply the scan method
             index = self.scan_method(size)
             # Register the entry
-            self.index_dict[key] = index
-            
+            # self.index_dict[key] = index
+            if isinstance(index, torch.Tensor):
+                self.index_dict[key] = index.clone().detach()
+            else:
+                self.index_dict[key] = torch.tensor(index, dtype=torch.long)
+
             # Create invert index for re-mapping to original order
             invert_index = [0] * len(index)
             for i, idx in enumerate(index):
                 invert_index[idx] = i
-            self.invert_index_dict[key] = invert_index
+            # self.invert_index_dict[key] = invert_index
+            if isinstance(invert_index, torch.Tensor):
+                self.invert_index_dict[key] = invert_index.clone().detach()
+            else:
+                self.invert_index_dict[key] = torch.tensor(invert_index, dtype=torch.long)
+                
             return index if not get_invert else invert_index
         else:
             return self.index_dict[key] if not get_invert else self.invert_index_dict[key]
