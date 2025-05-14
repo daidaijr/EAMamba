@@ -3,7 +3,7 @@ mamba-ssm
 accelerate
 einops
 fvcore
-hilbertcurve
+numpy-hilbert-curve
 tensorboardX
 timm
 triton

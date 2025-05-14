@@ -191,7 +191,7 @@ class ScanTransform():
         # Apply tensor reorder
         x = self.tensor_reorder(x, size)   
 
-        if self.scan_count == 8: # only apply scan to the first 4 batches
+        if self.scan_count == 8:
             x[:, :4, ...] = x[:, :4, :, self.get_entry(size)]
         else:
             x = x[:, :, :, self.get_entry(size)] if self.scan_type is not None else x
@@ -202,7 +202,7 @@ class ScanTransform():
     def restore_scan_transform(self, x, size):
         # Invert the scan index
         if self.scan_type is not None:
-            if self.scan_count == 8: # only revert the first 4 batches
+            if self.scan_count == 8:
                 x[:, :4, ...] = x[:, :4, :, self.get_entry(size, get_invert=True)]
             else:
                 x = x[:, :, :, self.get_entry(size, get_invert=True)] 

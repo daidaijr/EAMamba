@@ -289,12 +289,15 @@ class EAMamba(nn.Module):
         dual_pixel_task=False,       # True for dual-pixel defocus deblurring only. Also set inp_channels=6
         checkpoint_percentage=0.0,   # percentage of checkpointed block
         channel_mixer_type='Simple',
+        upscale=2,  
         mamba_cfg=None,
         **kwargs        # This is to ignore any other arguments that are not used
     ):
 
         super(EAMamba, self).__init__()
 
+        self.upscale = upscale
+        
         self.patch_embed = OverlapPatchEmbed(inp_channels, dim)
         
         channel_mixer_type = channel_mixer_type.lower() if channel_mixer_type is not None else None

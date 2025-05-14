@@ -19,13 +19,12 @@ import models
 from datasets.data_utils.transforms import CenterCropForERF
 
 # dataset_path = "datasets/list/Denoise/Urban100.txt"
-# dataset_path = "datasets/list/Derain/Test1200_lq.txt"
 # dataset_path = "datasets/list/SR/RealSRx4_valid_gt.txt"
-# dataset_path = "datasets/list/SR/RealSRx3_valid_lq.txt"
+# dataset_path = "datasets/list/Derain/Test1200_lq.txt"
 dataset_path = 'datasets/list/Denoise/SIDD_valid_lq.txt'
 
 # dataset_name = 'urban'
-# dataset_name = 'RealSRx3'
+# dataset_name = 'RealSRx4'
 # dataset_name = 'Test1200_lq'
 dataset_name = 'sidd_lq'
 
@@ -84,7 +83,7 @@ def calcGrads(model, inputs):
     elif w_option == 'r':
         position_w = outputs_shape[3] - 10  # right
     else:
-        assert(False, "Position w not defined")
+        assert False, "Position w not defined"
 
     if h_option == 'c':
         position_h = outputs_shape[2] // 2  # center
@@ -93,7 +92,7 @@ def calcGrads(model, inputs):
     elif h_option == 'b':
         position_h = outputs_shape[2] - 10  # bottom
     else:
-        assert(False, "Position h not defined")
+        assert False, "Position h not defined"
 
     # (center is just a single number)
     center = outputs[..., position_h, position_w].sum()
