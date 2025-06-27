@@ -1,8 +1,8 @@
-
-
 # EAMamba: Efficient All-Around Vision State Space Model for Image Restoration
 
-<!-- [Author_1](https://example.com), [Author_2](https://example.com), [Author_3](https://example.com), [Author_4](https://example.com), [Author_5](https://example.com) -->
+[Yu-Cheng Lin](https://github.com/daidaijr), [Yu-Syuan Xu](https://github.com/XUSean0118), Hao-Wei Chen, Hsien-Kai Kuo, Chun-Yi Lee
+
+### 🎉 Paper accepted at ICCV 2025
 
 <!-- [![paper](https://img.shields.io/badge/arXiv-Paper-brightgreen)](https://example.com)
 [![supplement](https://img.shields.io/badge/Supplementary-Material-B85252)](https://example.com) -->
@@ -11,8 +11,7 @@
 
 <hr />
 
-> **Abstract:** *Image restoration is a key task in low-level computer vision that aims to reconstruct high-quality images from degraded inputs. The emergence of Vision Mamba, which draws inspiration from the advanced state space model Mamba, marks a significant advancement in this field. Vision Mamba demonstrates excellence in modeling long-range dependencies with linear complexity, a crucial advantage for image restoration tasks. Despite its strengths, Vision Mamba encounters challenges in low-level vision tasks, including local pixel forgetting and computational complexity that scales with the number of scanning sequences. To address these limitations, this study introduces Efficient All-Around Mamba (EAMamba), an enhanced framework that incorporates an all-around scanning mechanism with a Multi-Head Selective Scan Module (MHSSM). The all-around scanning strategy implements multiple patterns to capture holistic information and resolves the local pixel forgetting issue.
-MHSSM efficiently aggregates multiple scanning sequences, which avoids increases in computational complexity and parameter count. Our experimental evaluations validate these innovations across several restoration tasks, including super resolution, denoising, and dehazing. The results validate that EAMamba achieves favorable performance while reducing parameters and FLOPs by up to $6\%$ and $41\%$, respectively, compared to existing low-level Vision Mamba methods.* 
+> **Abstract:** *Image restoration is a key task in low-level computer vision that aims to reconstruct high-quality images from degraded inputs. The emergence of Vision Mamba, which draws inspiration from the advanced state space model Mamba, marks a significant advancement in this field. Vision Mamba demonstrates excellence in modeling long-range dependencies with linear complexity, a crucial advantage for image restoration tasks. Despite its strengths, Vision Mamba encounters challenges in low-level vision tasks, including computational complexity that scales with the number of scanning sequences and local pixel forgetting. To address these limitations, this study introduces Efficient All-Around Mamba (EAMamba), an enhanced framework that incorporates a Multi-Head Selective Scan Module (MHSSM) with an all-around scanning mechanism. MHSSM efficiently aggregates multiple scanning sequences, which avoids increases in computational complexity and parameter count. The all-around scanning strategy implements multiple patterns to capture holistic information and resolves the local pixel forgetting issue. Our experimental evaluations validate these innovations across several restoration tasks, including super resolution, denoising, deblurring, and dehazing. The results validate that EAMamba achieves a significant 31-89\% reduction in FLOPs while maintaining favorable performance compared to existing low-level Vision Mamba methods. The source codes are accessible at the following repository:* 
 
 <br>
 <hr />
