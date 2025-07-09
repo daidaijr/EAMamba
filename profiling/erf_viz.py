@@ -15,6 +15,9 @@ import torch.nn as nn
 from torchvision import transforms
 
 # packages in project directory
+import sys
+import os
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 import models
 from datasets.data_utils.transforms import CenterCropForERF
 
