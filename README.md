@@ -50,10 +50,11 @@
 ## 💻 Installation
 We use Python=3.9.12, and PyTorch>=1.13.1 with CUDA=11.7.
 
-Installation of mamba-ssm:
+Installation of mamba-ssm (v2.2.2):
 ```bash
 git clone https://github.com/state-spaces/mamba.git
 cd mamba
+git checkout 8ffd905
 pip install .
 ```
 
