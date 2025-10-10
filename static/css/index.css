@@ -115,12 +115,40 @@ body {
 }
 
 .results-carousel .item {
-  margin: 5px;
+  /* remove external margin so the slider width calculation remains accurate;
+     use internal padding to create the visual spacing instead */
+  margin: 0;
   overflow: hidden;
   border: 1px solid #bbb;
   border-radius: 10px;
+  padding: 5px;
+  box-sizing: border-box;
+}
+
+/* The plugin wraps slides in a .slider-item element and sets an explicit width on it.
+   Ensure the wrapper uses border-box sizing and the inner .item fills it exactly. */
+.results-carousel .slider-item {
+  box-sizing: border-box;
   padding: 0;
-  font-size: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.results-carousel .slider-item > .item {
+  width: 100%;
+  padding: 5px; /* keep visual spacing inside the slide */
+  box-sizing: border-box;
+}
+
+/* Make images/videos fit the slide tightly */
+.results-carousel .item img,
+.results-carousel .item video {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  margin: 0 auto;
+  object-fit: contain;
 }
 
 .results-carousel video {

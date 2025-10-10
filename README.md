@@ -1,14 +1,14 @@
-# Nerfies
+# EAMamba
 
-This is the repository that contains source code for the [Nerfies website](https://nerfies.github.io).
+This is the repository that contains source code for the [EAMamba website](https://daidaijr.github.io/EAMamba/).
 
-If you find Nerfies useful for your work please cite:
+If you find EAMamba useful for your work please cite:
 ```
-@article{park2021nerfies
-  author    = {Park, Keunhong and Sinha, Utkarsh and Barron, Jonathan T. and Bouaziz, Sofien and Goldman, Dan B and Seitz, Steven M. and Martin-Brualla, Ricardo},
-  title     = {Nerfies: Deformable Neural Radiance Fields},
+@article{lin2025eamamba,
+  author    = {Yu-Cheng Lin and Yu-Syuan Xu and Hao-Wei Chen and Hsien-Kai Kuo and Chun-Yi Lee},
+  title     = {EAMamba: Efficient All-Around Vision State Space Model for Image Restoration},
   journal   = {ICCV},
-  year      = {2021},
+  year      = {2025},
 }
 ```
 
